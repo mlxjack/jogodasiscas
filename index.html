@@ -140,7 +140,7 @@
 <script>
 'use strict';
 // ====== CONFIG BACKEND (Google Apps Script) ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbwRWcq1Jl1MRw4p-LZx4Mv7A4vSvvl14k4f1wZNnNT0KL8Ox0qULYTZDEgl4257iYXyzQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyX-JZA5qSOvdYbKUvmtKbsIx53-wZ4AgFwDwnjdfHTssL2oXJB2dqF6KscIm53lp6azw/exec';
 const API_TOKEN = 'CHUMBADA_TOKEN_123';
 
 // ====== DATA (iscas) ======
@@ -231,11 +231,25 @@ async function saveLeaderboardRemote(entry){
   catch(err){ console.warn('Falha ao salvar ranking remoto',err); }
 }
 async function fetchLeaderboardRemote(){
-  if(!API_URL) return null;
-  // JSONP para contornar CORS do Apps Script (GET)
+  if(!API_URL) return [];
+  // JSONP seguro (sem CORS). Evita "setHeader" no Apps Script
   return new Promise((resolve)=>{
     const cb = 'LB_JSONP_' + Math.random().toString(36).slice(2);
-    const cleanup = (script)=>{ try{ delete window[cb]; }catch(_){} if(script && script.parentNode){ script.parentNode.removeChild(script);} };
+    let s = document.createElement('script');
+    function cleanup(){ if(s && s.parentNode){ s.parentNode.removeChild(s); } try{ delete window[cb]; }catch(_){ window[cb]=undefined; } }
+    window[cb] = (data)=>{ try{
+        const rows = Array.isArray(data) ? data.slice() : [];
+        rows.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score; });
+        resolve(rows);
+      } finally { cleanup(); }
+    };
+    s.src = `${API_URL}?action=list&callback=${cb}&t=${Date.now()}`;
+    s.onerror = ()=>{ cleanup(); resolve([]); };
+    document.head.appendChild(s);
+    // timeout de segurança
+    setTimeout(()=>{ cleanup(); resolve([]); }, 8000);
+  });
+}catch(_){} if(script && script.parentNode){ script.parentNode.removeChild(script);} };
     window[cb] = (data)=>{ try{
         const rows = Array.isArray(data) ? data.slice() : [];
         rows.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score; });
