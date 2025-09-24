@@ -140,7 +140,7 @@
 <script>
 'use strict';
 // ====== CONFIG BACKEND (Google Apps Script) ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbzgx7rTGl66KQbWyGbkmh0_2lR6rVaW-scIY475W0RuJEtdQ1GxJfbDs4IpRG2LG0jYCQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyX-JZA5qSOvdYbKUvmtKbsIx53-wZ4AgFwDwnjdfHTssL2oXJB2dqF6KscIm53lp6azw/exec';
 const API_TOKEN = 'CHUMBADA_TOKEN_123';
 
 // ====== DATA (iscas) ======
@@ -231,8 +231,24 @@ async function saveLeaderboardRemote(entry){
   catch(err){ console.warn('Falha ao salvar ranking remoto',err); }
 }
 async function fetchLeaderboardRemote(){
-  if(!API_URL) return [];
-  try{ const res=await fetch(`${API_URL}?action=list&t=${Date.now()}`,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); const data=await res.json(); return data.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score;}); }
+  if(!API_URL) return null;
+  // JSONP para contornar CORS do Apps Script (GET)
+  return new Promise((resolve)=>{
+    const cb = 'LB_JSONP_' + Math.random().toString(36).slice(2);
+    const cleanup = (script)=>{ try{ delete window[cb]; }catch(_){} if(script && script.parentNode){ script.parentNode.removeChild(script);} };
+    window[cb] = (data)=>{ try{
+        const rows = Array.isArray(data) ? data.slice() : [];
+        rows.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score; });
+        resolve(rows);
+      } finally { cleanup(script); }
+    };
+    const script = document.createElement('script');
+    script.src = `${API_URL}?action=list&callback=${cb}&t=${Date.now()}`;
+    script.onerror = ()=>{ cleanup(script); resolve(null); };
+    document.body.appendChild(script);
+    setTimeout(()=>{ cleanup(script); resolve(null); }, 8000); // timeout de segurança
+  });
+}?action=list&t=${Date.now()}`,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); const data=await res.json(); return data.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score;}); }
   catch(err){ console.warn('Falha ao carregar ranking remoto',err); return null; }
 }
 function renderLeaderboardRows(rows){ const body=lbTable; if(!body) return; body.innerHTML=''; if(!rows || rows.length===0){ const tr=document.createElement('tr'); tr.innerHTML='<td colspan="5" class="small">Nenhum registro ainda.</td>'; body.appendChild(tr); return;} rows.forEach((e,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${escapeHtml(e.name||'')}</td><td>${e.correct||0}</td><td>${Number(e.time||0).toFixed(1)}s</td><td>${e.score||0}</td>`; body.appendChild(tr); }); }
