@@ -31,7 +31,7 @@
     .app{width:min(100%,1100px);} 
     header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
     .brand{display:flex;gap:12px;align-items:center}
-    .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--ch-orange),#ffa645);box-shadow:0 8px 24px rgba(255,106,0,.25)}
+    .logo{height:44px;width:auto;display:block;object-fit:contain}
     h1{font-size:clamp(20px,3vw,28px);margin:0;font-weight:800;letter-spacing:.2px;text-transform:uppercase}
     .card{background:rgba(18,24,42,.9);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
 
@@ -79,10 +79,10 @@
   <div class="app">
     <header>
       <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
+        <img class="logo" src="https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Logo-chumbada-OFICIAL-horizonatal-2_f758e5db-514c-4559-8549-94cd56f40ef7.png?v=1756759937" alt="Chumbada Oficial" />
         <h1>Chumbada Oficial — Jogo de Iscas</h1>
       </div>
-      <div class="pill">Design esportivo • Mobile & Desktop</div>
+      <div class="pill">Acerte e entre no TOP 100<\/div>
     </header>
 
     <!-- START -->
@@ -96,9 +96,19 @@
             <input id="playerName" placeholder="Seu nome" required maxlength="40" />
             <input id="playerEmail" placeholder="Seu e-mail" type="email" required />
           </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn" type="submit">Começar a jogar</button>
-          <div class="small">O ranking exibirá apenas o seu <strong>nome</strong>. Os dados ficam no seu dispositivo (sem servidor).</div>
+          <button class="btn" id="goLeaderboardHome" type="button" style="background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)">Ver ranking completo</button>
+          </div>
+          <div class="small">O ranking exibirá apenas o seu <strong>nome</strong>. Seu e-mail é salvo apenas na planilha para controle.</div>
         </form>
+        <div id="top5" class="card" style="margin-top:16px;padding:14px">
+          <div style="font-weight:800;margin-bottom:8px">TOP 5 — Ranking Global</div>
+          <table style="width:100%;margin-top:8px;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;padding:6px">#</th><th style="text-align:left;padding:6px">Nome</th><th style="text-align:left;padding:6px">Acertos</th><th style="text-align:left;padding:6px">Tempo</th><th style="text-align:left;padding:6px">Pontos</th></tr></thead>
+            <tbody id="top5Body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -128,7 +138,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn" id="playAgain">Jogar novamente</button>
-        <button class="btn" id="goLeaderboard" style="background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)">Ver ranking</button>
+        <button class="btn" id="goLeaderboard" style="background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)">Ver ranking completo</button>
       </div>
     </section>
 
@@ -144,7 +154,7 @@
       </table>
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn" id="backHome">Voltar ao início</button>
-        <button class="btn" id="clearLb" style="background:linear-gradient(135deg,#b91c1c,#ef4444)">Limpar ranking (local)</button>
+        
       </div>
     </section>
   </div>
@@ -234,6 +244,7 @@ function startGame(){
   order = shuffle([...Array(LURES.length).keys()]);
   idx = 0; score = 0; correct = 0; totalTime = 0; remaining = DURATION;
   scoreEl.textContent = score; updateProgress(true);
+fetchLeaderboardRemote().then(rows=>renderTop5(rows)).catch(()=>{});
   startEl.style.display='none'; resultsEl.style.display='none'; leaderEl.style.display='none';
   gameEl.style.display='block';
   nextQuestion();
@@ -323,7 +334,7 @@ function finish(){
     correct,
     time: Number(totalTime.toFixed(1)),
     score,
-    ua: navigator.userAgent // email é salvo apenas para a Chumbada Oficial, não exibido no ranking
+    ua: navigator.userAgent // email é salvo apenas na planilha, não exibido no ranking
   });
 }
 
@@ -356,9 +367,35 @@ async function fetchLeaderboardRemote(){
 
 function renderLeaderboardRows(rows){
   lbTable.innerHTML='';
+  if(!rows || rows.length===0){
+    const tr=document.createElement('tr');
+    tr.innerHTML = '<td colspan="5" class="small">Nenhum registro ainda.</td>';
+    lbTable.appendChild(tr);
+    return;
+  }
   rows.forEach((e,i)=>{
     const tr=document.createElement('tr');
     tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(e.name||'')}</td><td>${e.correct||0}</td><td>${Number(e.time||0).toFixed(1)}s</td><td>${e.score||0}</td>`;
+    lbTable.appendChild(tr);
+  });
+}
+
+function renderTop5(rows){
+  const body=document.querySelector('#top5Body');
+  if(!body) return; body.innerHTML='';
+  const top = (rows||[]).slice(0,5);
+  if(top.length===0){
+    const tr=document.createElement('tr');
+    tr.innerHTML = '<td colspan="5" class="small">Sem registros ainda. Jogue para entrar no TOP 5.</td>';
+    body.appendChild(tr);
+    return;
+  }
+  top.forEach((e,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td style="padding:6px">${i+1}</td><td style="padding:6px">${escapeHtml(e.name||'')}</td><td style="padding:6px">${e.correct||0}</td><td style="padding:6px">${Number(e.time||0).toFixed(1)}s</td><td style="padding:6px">${e.score||0}</td>`;
+    body.appendChild(tr);
+  });
+}</td><td>${escapeHtml(e.name||'')}</td><td>${e.correct||0}</td><td>${Number(e.time||0).toFixed(1)}s</td><td>${e.score||0}</td>`;
     lbTable.appendChild(tr);
   });
 }
@@ -378,6 +415,14 @@ $('#goLeaderboard').onclick = async ()=>{
   const rows = await fetchLeaderboardRemote();
   renderLeaderboardRows(rows);
 };
+const goHomeBtn = document.querySelector('#goLeaderboardHome');
+if(goHomeBtn){
+  goHomeBtn.onclick = async ()=>{
+    startEl.style.display='none'; leaderEl.style.display='block';
+    const rows = await fetchLeaderboardRemote();
+    renderLeaderboardRows(rows);
+  };
+}
 $('#backHome').onclick = ()=>{ leaderEl.style.display='none'; startEl.style.display='block'; };
 $('#clearLb').onclick = ()=>{ if(confirm('Isto limpa apenas o ranking local (não afeta o Google Sheets). Continuar?')) renderLeaderboardRows([]); };
 
