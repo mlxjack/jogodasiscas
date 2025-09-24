@@ -82,7 +82,7 @@
         <div class="logo" aria-hidden="true"></div>
         <h1>Chumbada Oficial — Jogo de Iscas</h1>
       </div>
-      <div class="pill">Todas iscas de fabricação Chumbada Oficial</div>
+      <div class="pill">Design esportivo • Mobile & Desktop</div>
     </header>
 
     <!-- START -->
@@ -97,7 +97,7 @@
             <input id="playerEmail" placeholder="Seu e-mail" type="email" required />
           </div>
           <button class="btn" type="submit">Começar a jogar</button>
-          <div class="small">O ranking exibirá apenas o seu <strong>nome</strong>. O Primeiro do Ranking receberá uma premiação! Enviaremos mensagem por e-mail!.</div>
+          <div class="small">O ranking exibirá apenas o seu <strong>nome</strong>. Os dados ficam no seu dispositivo (sem servidor).</div>
         </form>
       </div>
     </section>
@@ -333,7 +333,7 @@ async function saveLeaderboardRemote(entry){
   try{
     await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'save', ...entry })
     });
   }catch(err){ console.warn('Falha ao salvar ranking remoto', err); }
