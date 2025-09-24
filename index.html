@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Chumbada Oficial — Jogo Adivinhe a Isca</title>
+  <title>Chumbada Oficial — Jogo de Iscas</title>
   <style>
     :root{
       --ch-blue:#0a6cff; --ch-orange:#ff6a00; --bg:#0b0f1a; --card:#12182a; --text:#f4f7ff; --muted:#92a1bd; --good:#22c55e; --bad:#ef4444; --warning:#f59e0b;
@@ -31,6 +31,7 @@
     input::placeholder{color:#a9b6d3}
     .btn{appearance:none;border:none;cursor:pointer;padding:14px 18px;border-radius:14px;font-weight:900;font-size:16px;letter-spacing:.4px;background:linear-gradient(135deg,var(--ch-orange),#ff8a33 40%,var(--ch-blue));color:white;box-shadow:0 10px 30px rgba(255,106,0,.25), inset 0 0 0 1px rgba(255,255,255,.15);transition:.2s transform,.2s box-shadow}
     .btn:hover{transform:translateY(-1px);box-shadow:0 14px 36px rgba(255,106,0,.33)}
+    .btn.secondary{background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)}
     .btn:disabled{opacity:.6;cursor:not-allowed}
 
     .game{display:none}
@@ -77,7 +78,7 @@
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn" type="submit">Começar a jogar</button>
-            <button class="btn" id="goLeaderboardHome" type="button" style="background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)">Ver ranking completo</button>
+            <button class="btn secondary" id="goLeaderboardHome" type="button">Ver ranking completo</button>
           </div>
           <div class="small">O ranking exibirá apenas o seu <strong>nome</strong>. Seu e-mail é salvo apenas na planilha para controle.</div>
         </form>
@@ -117,7 +118,7 @@
       </div>
       <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
         <button class="btn" id="playAgain">Jogar novamente</button>
-        <button class="btn" id="goLeaderboard" style="background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)">Ver ranking completo</button>
+        <button class="btn secondary" id="goLeaderboard">Ver ranking completo</button>
       </div>
     </section>
 
@@ -140,7 +141,7 @@
 <script>
 'use strict';
 // ====== CONFIG BACKEND (Google Apps Script) ======
-const API_URL = 'https://script.google.com/macros/s/AKfycbyX-JZA5qSOvdYbKUvmtKbsIx53-wZ4AgFwDwnjdfHTssL2oXJB2dqF6KscIm53lp6azw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyOYMQ7Aka_-yaCZn5vnd47_qinLW0VgGxa8Htcp7P6VUV3XMpdzs_qd5XGwPX_QRQ/exec';
 const API_TOKEN = 'CHUMBADA_TOKEN_123';
 
 // ====== DATA (iscas) ======
@@ -222,7 +223,7 @@ function nextQuestion(){
 function renderTimer(){ timeText.textContent=`${remaining.toFixed(1)}s`; timeFill.style.transform=`scaleX(${remaining/DURATION})`; }
 function lockOptions(isCorrect, correctText){[...optsEl.children].forEach(el=>{ if(el.textContent===correctText) el.classList.add('correct'); else if(isCorrect!==null) el.classList.add('wrong'); el.disabled=true;});}
 function selectAnswer(btn, ok){ if(!accepting) return; accepting=false; if(rafId){cancelAnimationFrame(rafId); rafId=null;} totalTime+=Math.min(DURATION,(DURATION-remaining)); const current=LURES[order[idx]]; lockOptions(ok,toUP(current.name)); if(ok){correct++; score+=10+Math.ceil(remaining*2);} scoreEl.textContent=score; setTimeout(()=>{idx++; updateProgress(); nextQuestion();},600); }
-function finish(){ gameEl.style.display='none'; resultsEl.style.display='block'; rCorrect.textContent=`${correct}/${LURES.length}`; rTime.textContent=`${totalTime.toFixed(1)}s`; rScore.textContent=score; saveLeaderboardRemote({token:API_TOKEN,name:player.name,email:player.email,correct,time:Number(totalTime.toFixed(1)),score,ua:navigator.userAgent}).then(async()=>{ const rows=await fetchLeaderboardRemote(); if(rows) renderTop5(rows); }).catch(()=>{}); }
+function finish(){ gameEl.style.display='none'; resultsEl.style.display='block'; rCorrect.textContent=`${correct}/${LURES.length}`; rTime.textContent=`${totalTime.toFixed(1)}s`; rScore.textContent=score; saveLeaderboardRemote({token:API_TOKEN,name:player.name,email:player.email,correct,time:Number(totalTime.toFixed(1)),score,ua:navigator.userAgent}).then(async()=>{ const rows=await fetchLeaderboardRemote(); renderTop5(rows); }).catch(()=>{}); }
 
 // ====== Remote Leaderboard ======
 async function saveLeaderboardRemote(entry){
@@ -230,9 +231,9 @@ async function saveLeaderboardRemote(entry){
   try{ await fetch(API_URL,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action:'save',...entry})}); }
   catch(err){ console.warn('Falha ao salvar ranking remoto',err); }
 }
+// GET via JSONP (sem CORS)
 async function fetchLeaderboardRemote(){
   if(!API_URL) return [];
-  // JSONP seguro (sem CORS). Evita "setHeader" no Apps Script
   return new Promise((resolve)=>{
     const cb = 'LB_JSONP_' + Math.random().toString(36).slice(2);
     let s = document.createElement('script');
@@ -246,24 +247,8 @@ async function fetchLeaderboardRemote(){
     s.src = `${API_URL}?action=list&callback=${cb}&t=${Date.now()}`;
     s.onerror = ()=>{ cleanup(); resolve([]); };
     document.head.appendChild(s);
-    // timeout de segurança
     setTimeout(()=>{ cleanup(); resolve([]); }, 8000);
   });
-}catch(_){} if(script && script.parentNode){ script.parentNode.removeChild(script);} };
-    window[cb] = (data)=>{ try{
-        const rows = Array.isArray(data) ? data.slice() : [];
-        rows.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score; });
-        resolve(rows);
-      } finally { cleanup(script); }
-    };
-    const script = document.createElement('script');
-    script.src = `${API_URL}?action=list&callback=${cb}&t=${Date.now()}`;
-    script.onerror = ()=>{ cleanup(script); resolve(null); };
-    document.body.appendChild(script);
-    setTimeout(()=>{ cleanup(script); resolve(null); }, 8000); // timeout de segurança
-  });
-}?action=list&t=${Date.now()}`,{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status); const data=await res.json(); return data.sort((a,b)=>{ if(b.correct!==a.correct) return b.correct-a.correct; if(a.time!==b.time) return a.time-b.time; return b.score-a.score;}); }
-  catch(err){ console.warn('Falha ao carregar ranking remoto',err); return null; }
 }
 function renderLeaderboardRows(rows){ const body=lbTable; if(!body) return; body.innerHTML=''; if(!rows || rows.length===0){ const tr=document.createElement('tr'); tr.innerHTML='<td colspan="5" class="small">Nenhum registro ainda.</td>'; body.appendChild(tr); return;} rows.forEach((e,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${i+1}</td><td>${escapeHtml(e.name||'')}</td><td>${e.correct||0}</td><td>${Number(e.time||0).toFixed(1)}s</td><td>${e.score||0}</td>`; body.appendChild(tr); }); }
 function renderTop5(rows){ const body=document.querySelector('#top5Body'); if(!body) return; body.innerHTML=''; const top=(rows||[]).slice(0,5); if(top.length===0){ const tr=document.createElement('tr'); tr.innerHTML='<td colspan="5" class="small">Sem registros ainda. Jogue para entrar no TOP 5.</td>'; body.appendChild(tr); return;} top.forEach((e,i)=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td style="padding:6px">${i+1}</td><td style="padding:6px">${escapeHtml(e.name||'')}</td><td style="padding:6px">${e.correct||0}</td><td style="padding:6px">${Number(e.time||0).toFixed(1)}s</td><td style="padding:6px">${e.score||0}</td>`; body.appendChild(tr); }); }
@@ -276,7 +261,7 @@ const goLeaderboardHome=$('#goLeaderboardHome'); if(goLeaderboardHome){ goLeader
 const backHomeBtn=$('#backHome'); if(backHomeBtn){ backHomeBtn.onclick=()=>{ leaderEl.style.display='none'; startEl.style.display='block'; }; }
 
 // ====== Initial load (Top 5) ======
-(async()=>{ const rows=await fetchLeaderboardRemote(); if(rows===null){ const b=document.querySelector('#top5Body'); if(b) b.innerHTML='<tr><td colspan="5" class="small">Erro ao carregar ranking. Tente novamente mais tarde.</td></tr>'; } else { renderTop5(rows); } })();
+(async()=>{ const rows=await fetchLeaderboardRemote(); renderTop5(rows||[]); })();
 </script>
 </body>
 </html>
