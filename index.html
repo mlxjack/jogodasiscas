@@ -244,7 +244,15 @@ function startGame(){
   order = shuffle([...Array(LURES.length).keys()]);
   idx = 0; score = 0; correct = 0; totalTime = 0; remaining = DURATION;
   scoreEl.textContent = score; updateProgress(true);
-fetchLeaderboardRemote().then(rows=>renderTop5(rows)).catch(()=>{});
+(async ()=>{
+  const rows = await fetchLeaderboardRemote();
+  if(rows===null){
+    const body=document.querySelector('#top5Body');
+    if(body){ body.innerHTML = '<tr><td colspan="5" class="small">Erro ao carregar ranking. Tente novamente mais tarde.</td></tr>'; }
+  } else {
+    renderTop5(rows);
+  }
+})();
   startEl.style.display='none'; resultsEl.style.display='none'; leaderEl.style.display='none';
   gameEl.style.display='block';
   nextQuestion();
@@ -334,8 +342,12 @@ function finish(){
     correct,
     time: Number(totalTime.toFixed(1)),
     score,
-    ua: navigator.userAgent // email é salvo apenas na planilha, não exibido no ranking
-  });
+    ua: navigator.userAgent
+  }).then(async ()=>{
+    // após salvar, atualiza Top5 em background
+    const rows = await fetchLeaderboardRemote();
+    if(rows) renderTop5(rows);
+  }).catch(()=>{});
 }
 
 // ====== Leaderboard Remoto (Sheets via Apps Script) ======
@@ -352,6 +364,17 @@ async function saveLeaderboardRemote(entry){
 
 async function fetchLeaderboardRemote(){
   if(!API_URL || API_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')){ return []; }
+  try{
+    const res = await fetch(`${API_URL}?action=list&t=${Date.now()}`, { cache: 'no-store', mode: 'cors' });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    return data.sort((a,b)=>{
+      if(b.correct!==a.correct) return b.correct-a.correct;
+      if(a.time!==b.time) return a.time-b.time;
+      return b.score-a.score;
+    });
+  }catch(err){ console.warn('Falha ao carregar ranking remoto', err); return null; }
+}
   try{
     const res = await fetch(`${API_URL}?action=list`);
     if(!res.ok) throw new Error('HTTP '+res.status);
