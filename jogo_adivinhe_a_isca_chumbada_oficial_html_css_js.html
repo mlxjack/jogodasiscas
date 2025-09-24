@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chumbada Oficial — Jogo Adivinhe a Isca</title>
+  <style>
+    :root{
+      --ch-blue:#0a6cff;
+      --ch-orange:#ff6a00;
+      --bg:#0b0f1a;
+      --card:#12182a;
+      --text:#f4f7ff;
+      --muted:#92a1bd;
+      --good:#22c55e;
+      --bad:#ef4444;
+      --warning:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 20% -10%, rgba(255,106,0,.2), transparent 60%),
+                  radial-gradient(1000px 700px at 120% 20%, rgba(10,108,255,.18), transparent 60%),
+                  var(--bg);
+      display:flex;align-items:center;justify-content:center;
+      padding:16px;
+    }
+    .app{width:min(100%,1100px);} 
+    header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--ch-orange),#ffa645);box-shadow:0 8px 24px rgba(255,106,0,.25)}
+    h1{font-size:clamp(20px,3vw,28px);margin:0;font-weight:800;letter-spacing:.2px;text-transform:uppercase}
+    .card{background:rgba(18,24,42,.9);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+
+    /* Start */
+    .start{padding:20px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.8px}
+    .title{font-size:clamp(28px,4.5vw,44px);font-weight:900;margin:6px 0 4px;line-height:1.05}
+    .subtitle{color:var(--muted);font-size:clamp(14px,2.2vw,16px)}
+    form{display:grid;gap:10px;margin-top:10px}
+    .row{display:grid;gap:10px;grid-template-columns:1fr}
+    @media(min-width:520px){.row{grid-template-columns:1fr 1fr}}
+    input{width:100%;padding:14px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--text);outline:none}
+    input::placeholder{color:#a9b6d3}
+    .btn{appearance:none;border:none;cursor:pointer;padding:14px 18px;border-radius:14px;font-weight:900;font-size:16px;letter-spacing:.4px;background:linear-gradient(135deg,var(--ch-orange),#ff8a33 40%,var(--ch-blue));color:white;box-shadow:0 10px 30px rgba(255,106,0,.25), inset 0 0 0 1px rgba(255,255,255,.15);transition:.2s transform,.2s box-shadow}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 14px 36px rgba(255,106,0,.33)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+
+    /* Game */
+    .game{display:none}
+    .statusbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .meter{flex:1;height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+    .meter>i{display:block;height:100%;width:100%;transform-origin:left center;background:linear-gradient(90deg,var(--good),#d8e55a,var(--warning),var(--bad))}
+    .statusright{display:flex;gap:14px;align-items:center;color:var(--muted);font-weight:700}
+    .board{padding:16px}
+    .qimg{width:100%;max-height:420px;object-fit:contain;background:#0c1327;border-radius:16px;border:1px solid rgba(255,255,255,.08)}
+    .opts{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+    @media(min-width:650px){.opts{grid-template-columns:1fr 1fr}}
+    .opt{padding:14px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));font-weight:900;letter-spacing:.6px;text-transform:uppercase;text-align:center;cursor:pointer;transition:.15s transform, .15s border-color; color:var(--text)}
+    .opt:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.2)}
+    .opt.correct{outline:2px solid var(--good)}
+    .opt.wrong{outline:2px solid var(--bad)}
+    .progress{color:var(--muted);font-weight:800}
+
+    /* Results / Leaderboard */
+    .results{display:none;padding:20px}
+    .stats{display:flex;flex-wrap:wrap;gap:12px}
+    .stat{flex:1 1 160px;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));font-weight:800}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+    th{color:var(--muted);font-weight:800;letter-spacing:.4px;text-transform:uppercase;font-size:12px}
+    .small{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <h1>Chumbada Oficial — Jogo de Iscas</h1>
+      </div>
+      <div class="pill">Design esportivo • Mobile & Desktop</div>
+    </header>
+
+    <!-- START -->
+    <section id="start" class="card start">
+      <div>
+        <div class="pill">Desafio</div>
+        <div class="title">Adivinhe o nome da ISCA em até <span style="color:var(--ch-orange)">10s</span>!</div>
+        <p class="subtitle">Você verá <strong>todas</strong> as iscas em uma rodada. Marque pontos por acerto e entre no ranking. Critério: <strong>acertos</strong> e <strong>tempo total</strong>.</p>
+        <form id="signup">
+          <div class="row">
+            <input id="playerName" placeholder="Seu nome" required maxlength="40" />
+            <input id="playerEmail" placeholder="Seu e-mail" type="email" required />
+          </div>
+          <button class="btn" type="submit">Começar a jogar</button>
+          <div class="small">O ranking exibirá apenas o seu <strong>nome</strong>. Os dados ficam no seu dispositivo (sem servidor).</div>
+        </form>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="game" class="card game">
+      <div class="statusbar">
+        <div class="progress" id="progress">0/0</div>
+        <div class="meter" aria-label="tempo"><i id="timeFill" style="transform:scaleX(1)"></i></div>
+        <div class="statusright">
+          <span>⏱️ <span id="time">10.0s</span></span>
+          <span>⭐ <span id="score">0</span></span>
+        </div>
+      </div>
+      <div class="board">
+        <img id="qimg" class="qimg" alt="Isca" />
+        <div id="opts" class="opts"></div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="results" class="card results">
+      <h2 style="margin:0 0 8px">Resultado</h2>
+      <div class="stats">
+        <div class="stat">Acertos: <span id="rCorrect">0</span></div>
+        <div class="stat">Tempo total: <span id="rTime">0.0s</span></div>
+        <div class="stat">Pontuação: <span id="rScore">0</span></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn" id="playAgain">Jogar novamente</button>
+        <button class="btn" id="goLeaderboard" style="background:linear-gradient(135deg,var(--ch-blue),#6aa8ff)">Ver ranking</button>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD -->
+    <section id="leader" class="card results">
+      <h2 style="margin:0 0 8px">Ranking</h2>
+      <div class="small">Critério: mais acertos primeiro; em empate, menor tempo total.</div>
+      <table id="lbTable">
+        <thead>
+          <tr><th>#</th><th>Nome</th><th>Acertos</th><th>Tempo</th><th>Pontos</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn" id="backHome">Voltar ao início</button>
+        <button class="btn" id="clearLb" style="background:linear-gradient(135deg,#b91c1c,#ef4444)">Limpar ranking (local)</button>
+      </div>
+    </section>
+  </div>
+
+<script>
+// ====== CONFIGURAÇÃO DO RANKING REMOTO (Google Apps Script) ======
+// 1) Publique o Apps Script como Web App (veja instruções na mensagem do chat)
+// 2) Cole aqui a URL do seu Web App e um token simples para validar o envio
+const API_URL = 'https://script.google.com/macros/s/AKfycbyX-JZA5qSOvdYbKUvmtKbsIx53-wZ4AgFwDwnjdfHTssL2oXJB2dqF6KscIm53lp6azw/exec'; // ex.: https://script.google.com/macros/s/AKfycbx.../exec
+const API_TOKEN = 'CHUMBADA_TOKEN_123'; // troque por um valor forte e guarde em segredo
+
+// ====== DATA (iscas) ======
+const LURES = [
+  { name: 'Ajisho', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiSho.jpg?v=1757702440' },
+  { name: 'AjiNagare', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiNagare.jpg?v=1757703627' },
+  { name: 'Ajiring', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiRing.jpg?v=1757702408' },
+  { name: 'AjiFukura', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiFukura.jpg?v=1757703198' },
+  { name: 'AjiKaze', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiKaze.jpg?v=1757702485' },
+  { name: 'AjiMizu', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiMizu.jpg?v=1757702348' },
+  { name: 'Lagostim', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/lagostim-capa.png?v=1757600481' },
+  { name: 'Grilo', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/grilo-capa.png?v=1757599683' },
+  { name: 'legfrog', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/legfrog-capa.jpg?v=1757532378' },
+  { name: 'lacraworm', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/lacraworm-capa.jpg?v=1757526312' },
+  { name: 'Filotail', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/filotail-capa.jpg?v=1757431230' },
+  { name: 'Folha', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/folha.jpg?v=1757526781' },
+  { name: 'vibraworm', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Vibraworm-capa.png?v=1757415234' },
+  { name: 'Snaketail', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/SnakeTail.png?v=1757342823' },
+  { name: 'Ajiball', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Aji-Ball-2_4c545e31-2abe-425c-8b0f-c5fc0036f26f.jpg?v=1755535466' },
+  { name: 'Ajineedle', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Aji-Needle-2.jpg?v=1755534106' },
+  { name: 'Morceguinho', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/morceguinho2.jpg?v=1755529787' },
+  { name: 'AjiTwin', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiTwin.jpg?v=1755526789' },
+  { name: 'AjiStingV', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/AjiStingV-2.jpg?v=1755526145' },
+  { name: 'Tipworm', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/TipWorm-2.jpg?v=1754940033' },
+  { name: 'Sapinho costela', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Sapinho-rosa.jpg?v=1739470326' },
+  { name: 'Batelouca', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Batelouca-01.jpg?v=1739354819' },
+  { name: 'Gfluke', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/gfluke2.jpg?v=1754573632' },
+  { name: 'Pitu', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/pitu-rosa-11cm_7d634a32-8c8f-4524-8931-742eabb4354b.jpg?v=1739474321' },
+  { name: 'baitboss', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Bait-Boss.png?v=1746031678' },
+  { name: 'Mustachegrub', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Mustache-Grub_capa.png?v=1748270474' },
+  { name: 'Grub', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Grub-rosa-9cm.jpg?v=1739475546' },
+  { name: 'Mini Paddle', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/mini-paddle_capa.png?v=1748266934' },
+  { name: 'Boom Paddle', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Boom-Paddle-rosa-14cm_3b436208-8328-4f88-9aca-142ea7980855.jpg?v=1739467113' },
+  { name: "Dança D'água", img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/danca-dagua.png?v=1725027108' },
+  { name: 'Easy Drift', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/easy-drift.png?v=1748346774' },
+  { name: 'Lagartail', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Lagartail_2.png?v=1755112383' },
+  { name: 'Sapo estica', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/sapo-estica-capa.jpg?v=1745504234' },
+  { name: 'Fatworm', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/fatworm.jpg?v=1747233043' },
+  { name: 'tornado worm', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Tornado-Worm-2.jpg?v=1750258861' },
+  { name: 'Garra Braba', img: 'https://cdn.shopify.com/s/files/1/0454/5845/6736/files/Garra-brava-2.jpg?v=1750258752' },
+];
+
+// ====== Helpers & Elements ======
+const $ = (q)=>document.querySelector(q);
+const startEl = $('#start');
+const gameEl = $('#game');
+const resultsEl = $('#results');
+const leaderEl = $('#leader');
+const qimg = $('#qimg');
+const optsEl = $('#opts');
+const progressEl = $('#progress');
+const timeText = $('#time');
+const timeFill = $('#timeFill');
+const scoreEl = $('#score');
+const rCorrect = $('#rCorrect');
+const rTime = $('#rTime');
+const rScore = $('#rScore');
+const lbTable = $('#lbTable tbody');
+
+// ====== State ======
+let player = { name: '', email: '' };
+let order = [];
+let idx = 0;
+let score = 0;
+let correct = 0;
+let totalTime = 0;
+let rafId = null;        // para timer 10s sem drift
+let accepting = false;   // evita duplo clique
+let remaining = 10.0;    // segundos por questão
+const DURATION = 10.0;
+
+function toUP(s){ return s.toLocaleUpperCase('pt-BR'); }
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+// ====== Start & Flow ======
+function startGame(){
+  order = shuffle([...Array(LURES.length).keys()]);
+  idx = 0; score = 0; correct = 0; totalTime = 0; remaining = DURATION;
+  scoreEl.textContent = score; updateProgress(true);
+  startEl.style.display='none'; resultsEl.style.display='none'; leaderEl.style.display='none';
+  gameEl.style.display='block';
+  nextQuestion();
+}
+
+function updateProgress(reset=false){ progressEl.textContent = `${reset?0:idx}/${LURES.length}`; }
+
+function nextQuestion(){
+  if(idx >= order.length){ return finish(); }
+  const lure = LURES[ order[idx] ];
+  qimg.src = lure.img; qimg.alt = `Imagem da isca ${lure.name}`;
+
+  // opções (1 correta + 3 aleatórias)
+  const others = LURES.filter((_,i)=>i!==order[idx]);
+  const choices = shuffle([lure.name, ...shuffle(others).slice(0,3).map(x=>x.name)]).map(toUP);
+  optsEl.innerHTML = '';
+  for(const c of choices){
+    const btn = document.createElement('button');
+    btn.className='opt'; btn.textContent=c; btn.type='button';
+    btn.onclick=()=>selectAnswer(btn, c === toUP(lure.name));
+    optsEl.appendChild(btn);
+  }
+
+  // timer 10s com requestAnimationFrame
+  remaining = DURATION; renderTimer();
+  if(rafId) cancelAnimationFrame(rafId);
+  const startedAt = performance.now();
+  const endAt = startedAt + DURATION*1000;
+  accepting = true;
+
+  const tick = ()=>{
+    const now = performance.now();
+    remaining = Math.max(0, (endAt - now)/1000);
+    renderTimer();
+    if(remaining <= 0){
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+      accepting = false;
+      const elapsed = Math.min(DURATION, (now - startedAt)/1000);
+      totalTime += elapsed;
+      lockOptions(false, toUP(lure.name));
+      setTimeout(()=>{ idx++; updateProgress(); nextQuestion(); }, 700);
+    } else {
+      rafId = requestAnimationFrame(tick);
+    }
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+function renderTimer(){
+  timeText.textContent = `${remaining.toFixed(1)}s`;
+  const pct = remaining / DURATION; 
+  timeFill.style.transform = `scaleX(${pct})`;
+}
+
+function lockOptions(isCorrect, correctText){
+  [...optsEl.children].forEach(el=>{
+    if(el.textContent===correctText) el.classList.add('correct');
+    else if(isCorrect!==null) el.classList.add('wrong');
+    el.disabled = true;
+  });
+}
+
+function selectAnswer(btn, ok){
+  if(!accepting) return;
+  accepting = false;
+  if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  totalTime += Math.min(DURATION, (DURATION - remaining));
+  const current = LURES[ order[idx] ];
+  lockOptions(ok, toUP(current.name));
+  if(ok){ correct++; score += 10 + Math.ceil(remaining*2); }
+  scoreEl.textContent = score;
+  setTimeout(()=>{ idx++; updateProgress(); nextQuestion(); }, 600);
+}
+
+function finish(){
+  gameEl.style.display='none';
+  resultsEl.style.display='block';
+  rCorrect.textContent = `${correct}/${LURES.length}`;
+  rTime.textContent = `${totalTime.toFixed(1)}s`;
+  rScore.textContent = score;
+
+  // salva no ranking remoto
+  saveLeaderboardRemote({
+    token: API_TOKEN,
+    name: player.name,
+    email: player.email,
+    correct,
+    time: Number(totalTime.toFixed(1)),
+    score,
+    ua: navigator.userAgent // email é salvo apenas na planilha, não exibido no ranking
+  });
+}
+
+// ====== Leaderboard Remoto (Sheets via Apps Script) ======
+async function saveLeaderboardRemote(entry){
+  if(!API_URL || API_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')){ return; }
+  try{
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save', ...entry })
+    });
+  }catch(err){ console.warn('Falha ao salvar ranking remoto', err); }
+}
+
+async function fetchLeaderboardRemote(){
+  if(!API_URL || API_URL.includes('PASTE_YOUR_WEB_APP_URL_HERE')){ return []; }
+  try{
+    const res = await fetch(`${API_URL}?action=list`);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    // Ordenação garantida também no servidor, mas reforçada aqui
+    return data.sort((a,b)=>{
+      if(b.correct!==a.correct) return b.correct-a.correct;
+      if(a.time!==b.time) return a.time-b.time;
+      return b.score-a.score;
+    });
+  }catch(err){ console.warn('Falha ao carregar ranking remoto', err); return []; }
+}
+
+function renderLeaderboardRows(rows){
+  lbTable.innerHTML='';
+  rows.forEach((e,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${escapeHtml(e.name||'')}</td><td>${e.correct||0}</td><td>${Number(e.time||0).toFixed(1)}s</td><td>${e.score||0}</td>`;
+    lbTable.appendChild(tr);
+  });
+}
+
+// ====== Eventos ======
+$('#signup').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const name = $('#playerName').value.trim();
+  const email = $('#playerEmail').value.trim();
+  if(!name || !email) return;
+  player = { name, email };
+  startGame();
+});
+$('#playAgain').onclick = ()=>{ startEl.style.display='none'; leaderEl.style.display='none'; startGame(); };
+$('#goLeaderboard').onclick = async ()=>{
+  resultsEl.style.display='none'; leaderEl.style.display='block';
+  const rows = await fetchLeaderboardRemote();
+  renderLeaderboardRows(rows);
+};
+$('#backHome').onclick = ()=>{ leaderEl.style.display='none'; startEl.style.display='block'; };
+$('#clearLb').onclick = ()=>{ if(confirm('Isto limpa apenas o ranking local (não afeta o Google Sheets). Continuar?')) renderLeaderboardRows([]); };
+
+// Init
+updateProgress(true);
+</script>
+</body>
+</html>
