@@ -34,7 +34,7 @@ function App() {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    fetch('/lures_data.json')
+    fetch('lures_data.json')
       .then(res => res.json())
       .then(data => {
         setLures(data);
@@ -266,7 +266,7 @@ function App() {
 
   const renderLogin = () => (
     <div className="card">
-      <img src="/images/CHUMBADA-OFICIAL.png" alt="Chumbada Oficial" className="logo" />
+      <img src="images/CHUMBADA-OFICIAL.png" alt="Chumbada Oficial" className="logo" />
       <h2>Desafio das Iscas</h2>
       <p style={{marginBottom: '2rem', color: '#a1a1aa', marginTop: '10px'}}>
         Mostre que você conhece o arsenal da Chumbada Oficial.
@@ -337,7 +337,7 @@ function App() {
         
         <div className="lure-image-container">
           <img 
-            src={`/images/${currentQ.correct.image.replace('assets/images/', '')}`} 
+            src={`images/${currentQ.correct.image.replace('assets/images/', '')}`} 
             alt="Qual é a isca?" 
             className="lure-image" 
           />
@@ -444,7 +444,7 @@ function App() {
   return (
     <div className="app-container">
       <header>
-        {gameState !== 'login' && <img src="/images/CHUMBADA-OFICIAL.png" alt="Chumbada Oficial" className="logo" style={{height: '40px', cursor: 'pointer'}} onClick={() => setGameState('login')} />}
+        {gameState !== 'login' && <img src="images/CHUMBADA-OFICIAL.png" alt="Chumbada Oficial" className="logo" style={{height: '40px', cursor: 'pointer'}} onClick={() => setGameState('login')} />}
       </header>
       
       {gameState === 'loading' && <div className="card">Carregando arsenal...</div>}
