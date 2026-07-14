@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Imagem indisponivel">
+  <rect width="800" height="600" fill="#f4f4f5"/>
+  <rect x="120" y="120" width="560" height="360" rx="24" fill="#ffffff" stroke="#d4d4d8" stroke-width="6"/>
+  <path d="M250 380l100-120 85 95 55-65 90 90H250z" fill="#e4e4e7"/>
+  <circle cx="300" cy="220" r="42" fill="#d4d4d8"/>
+  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#71717a">Sem foto</text>
+</svg>
