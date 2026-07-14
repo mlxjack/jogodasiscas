@@ -283,7 +283,7 @@ function App() {
           <label>Seu Nome Completo</label>
           <input 
             type="text" 
-            placeholder="Ex: João Pescador" 
+            placeholder="Ex: João da Silva" 
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
             required
