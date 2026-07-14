@@ -309,3 +309,71 @@ h1 span {
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+/* Play Count Info */
+.lb-plays {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* Game Version Label */
+.game-version {
+  font-size: 0.7rem;
+  color: #52525b;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+/* Floating feedback animation for points */
+.animation-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.points-pop {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 2.2rem;
+  color: #10b981;
+  text-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+  animation: floatUp 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+.bonus-pop {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 2.2rem;
+  color: #f59e0b;
+  text-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+  animation: floatUp 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.9);
+  }
+}
+

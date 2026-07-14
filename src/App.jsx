@@ -7,6 +7,7 @@ const TOTAL_QUESTIONS = 15;
 const TIME_PER_QUESTION = 10;
 const OPTIONS_COUNT = 5;
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'];
+const GAME_VERSION = "v1.2.0";
 
 function App() {
   const [lures, setLures] = useState([]);
@@ -24,6 +25,10 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
+  
+  // Feedback Animations
+  const [feedbackAnimation, setFeedbackAnimation] = useState(null); // 'base', 'bonus', null
+  const [bonusPointsAwarded, setBonusPointsAwarded] = useState(0);
   
   // End Game State
   const [isNewRecord, setIsNewRecord] = useState(false);
@@ -49,7 +54,7 @@ function App() {
     e.preventDefault();
     if (!playerName.trim() || !playerEmail.trim() || !playerPhone.trim()) return;
     
-    // Pick 15 random lures for questions
+    // Pick 15 unique, random lures for questions (guarantees no duplicates in the same session)
     let shuffledLures = [...lures].sort(() => 0.5 - Math.random());
     let selectedLures = shuffledLures.slice(0, TOTAL_QUESTIONS);
     
@@ -71,6 +76,7 @@ function App() {
     setScore(0);
     setIsNewRecord(false);
     setIsFirstTime(false);
+    setFeedbackAnimation(null);
     setGameState('playing');
     startTimer();
   };
@@ -109,8 +115,24 @@ function App() {
     
     const currentQ = questions[currentIndex];
     if (option.name === currentQ.correct.name) {
-      // Calculate score: 100 base + 10 per remaining second
-      setScore(prev => prev + 100 + (timeLeft * 10));
+      const bonus = timeLeft * 10;
+      setBonusPointsAwarded(bonus);
+      
+      // Trigger base score animation (+100 Pontos)
+      setFeedbackAnimation('base');
+      
+      // After 800ms, trigger time bonus animation (+X Bônus Tempo)
+      setTimeout(() => {
+        setFeedbackAnimation('bonus');
+      }, 800);
+      
+      // After 1600ms (end of second animation), reset animation state
+      setTimeout(() => {
+        setFeedbackAnimation(null);
+      }, 1600);
+
+      // Accumulate score
+      setScore(prev => prev + 100 + bonus);
     }
     
     setTimeout(() => {
@@ -148,27 +170,33 @@ function App() {
           setIsFirstTime(false);
           const userDoc = querySnapshot.docs[0];
           const userData = userDoc.data();
+          const newPlays = (userData.plays || 0) + 1;
+          
+          const updateData = {
+            plays: newPlays,
+            name: playerName,
+            phone: playerPhone,
+            date: dateStr
+          };
           
           if (finalScore > userData.score) {
-            await updateDoc(doc(db, "ranking", userDoc.id), {
-              score: finalScore,
-              name: playerName,
-              phone: playerPhone,
-              date: dateStr
-            });
+            updateData.score = finalScore;
             setIsNewRecord(true);
           } else {
             setIsNewRecord(false);
           }
+          
+          await updateDoc(doc(db, "ranking", userDoc.id), updateData);
         } else {
           // New User
           setIsFirstTime(true);
-          setIsNewRecord(false); // We show a welcome message instead of "new record" for the first time
+          setIsNewRecord(false); // New user, we show thank you message instead of record
           await setDoc(doc(rankingRef), {
             name: playerName,
             email: playerEmail.toLowerCase(),
             phone: playerPhone,
             score: finalScore,
+            plays: 1,
             date: dateStr
           });
         }
@@ -190,11 +218,14 @@ function App() {
     
     if (existingIndex >= 0) {
       setIsFirstTime(false);
+      const newPlays = (currentLeaderboard[existingIndex].plays || 0) + 1;
+      currentLeaderboard[existingIndex].plays = newPlays;
+      currentLeaderboard[existingIndex].name = playerName;
+      currentLeaderboard[existingIndex].phone = playerPhone;
+      currentLeaderboard[existingIndex].date = new Date().toISOString();
+      
       if (finalScore > currentLeaderboard[existingIndex].score) {
         currentLeaderboard[existingIndex].score = finalScore;
-        currentLeaderboard[existingIndex].name = playerName;
-        currentLeaderboard[existingIndex].phone = playerPhone;
-        currentLeaderboard[existingIndex].date = new Date().toISOString();
         setIsNewRecord(true);
       } else {
         setIsNewRecord(false);
@@ -207,6 +238,7 @@ function App() {
         email: playerEmail.toLowerCase(),
         phone: playerPhone,
         score: finalScore, 
+        plays: 1,
         date: new Date().toISOString() 
       });
     }
@@ -249,7 +281,6 @@ function App() {
     }
 
     // Admin autenticado
-    let dataToExport = [];
     if (db) {
       alert("Com o Firebase ativo, o ideal é ver todos os e-mails e contatos diretamente no painel do Firebase Console (Firestore) de forma mais segura. Baixando fallback local apenas como backup...");
     }
@@ -328,7 +359,19 @@ function App() {
     if (!currentQ) return null;
     
     return (
-      <div className="card">
+      <div className="card" style={{ position: 'relative' }}>
+        {/* Animated points overlay */}
+        {feedbackAnimation === 'base' && (
+          <div className="animation-overlay">
+            <div className="points-pop">+100 Pontos</div>
+          </div>
+        )}
+        {feedbackAnimation === 'bonus' && bonusPointsAwarded > 0 && (
+          <div className="animation-overlay">
+            <div className="bonus-pop">+{bonusPointsAwarded} Bônus Tempo</div>
+          </div>
+        )}
+
         <div className="game-stats">
           <div>Isca <span className="highlight">{currentIndex + 1}</span> / {TOTAL_QUESTIONS}</div>
           <div>Tempo: <span className="highlight" style={{color: timeLeft <= 3 ? '#ef4444' : 'var(--orange)'}}>{timeLeft}s</span></div>
@@ -417,7 +460,12 @@ function App() {
             {leaderboardData.map((item, i) => (
               <li key={i} className="leaderboard-item">
                 <span className="rank">#{i + 1}</span>
-                <span className="lb-name">{item.name}</span>
+                <span className="lb-name">
+                  {item.name}
+                  <span className="lb-plays">
+                    ({item.plays || 1} { (item.plays || 1) === 1 ? 'partida' : 'partidas' })
+                  </span>
+                </span>
                 <span className="lb-score">{item.score} pts</span>
               </li>
             ))}
@@ -452,6 +500,8 @@ function App() {
       {gameState === 'playing' && renderPlaying()}
       {gameState === 'gameover' && renderGameOver()}
       {gameState === 'leaderboard' && renderLeaderboard()}
+
+      <div className="game-version">Versão {GAME_VERSION}</div>
     </div>
   );
 }
