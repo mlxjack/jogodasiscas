@@ -7,7 +7,7 @@ const TOTAL_QUESTIONS = 15;
 const TIME_PER_QUESTION = 10;
 const OPTIONS_COUNT = 5;
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'];
-const GAME_VERSION = "v1.2.0";
+const GAME_VERSION = "v1.3.0";
 
 function App() {
   const [lures, setLures] = useState([]);
@@ -295,6 +295,23 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const renderHubLinks = () => (
+    <div className="hub-links-container">
+      <div className="hub-links-title">Conheça nossos outros jogos</div>
+      <div className="hub-links-grid">
+        <a href="https://jogos.chumbada.com.br" target="_blank" rel="noopener noreferrer" className="hub-link-btn">
+          <span>Hub de Jogos</span>
+        </a>
+        <a href="https://jogodaschumbadas.chumbada.com.br" target="_blank" rel="noopener noreferrer" className="hub-link-btn">
+          <span>Jogo das Chumbadas</span>
+        </a>
+        <a href="https://jogodosanzois.chumbada.com.br" target="_blank" rel="noopener noreferrer" className="hub-link-btn">
+          <span>Jogo dos Anzóis</span>
+        </a>
+      </div>
+    </div>
+  );
+
   const renderLogin = () => (
     <div className="card">
       <img src="images/CHUMBADA-OFICIAL.png" alt="Chumbada Oficial" className="logo" />
@@ -351,6 +368,7 @@ function App() {
       >
         Ver Ranking Atual
       </button>
+      {renderHubLinks()}
     </div>
   );
 
@@ -440,6 +458,7 @@ function App() {
       <button className="btn-secondary" onClick={() => setGameState('login')} disabled={isSaving}>
         Jogar Novamente
       </button>
+      {renderHubLinks()}
     </div>
   );
 
