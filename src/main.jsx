@@ -1,10 +1,9 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './index.css'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import GameApp from './engine/GameApp.jsx';
 
-ReactDOM.createRoot(document.getElementById('app')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+createRoot(document.getElementById('app')).render(
+  <StrictMode>
+    <GameApp gameId="iscas" logo="logo.webp" />
+  </StrictMode>,
+);

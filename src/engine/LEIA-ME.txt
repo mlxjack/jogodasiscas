@@ -1,0 +1,1 @@
+Cópia gerada de chumbada-jogos/engine (node scripts/sync.mjs). Edite lá, não aqui.
